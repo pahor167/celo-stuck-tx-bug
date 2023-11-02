@@ -118,8 +118,7 @@ function printFormattedTransactionReceipt(transactionReceipt: any) {
         status,
         transactionHash,
         from,
-        to,
-        feeCurrency
+        to
       };
 
     console.log(`Transaction details:`, filteredTransactionReceipt, `\n`);
