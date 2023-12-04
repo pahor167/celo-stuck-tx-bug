@@ -15,12 +15,12 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY
 /**
  * Boilerplate to create a viem client
  */
+const account = privateKeyToAccount(`0x${PRIVATE_KEY}`);
 const publicClient = createPublicClient({
     chain: celoAlfajores,
     transport: http(),
 });
-const account = privateKeyToAccount(`0x${PRIVATE_KEY}`);
-const client = createWalletClient({
+const walletClient = createWalletClient({
     chain: celoAlfajores, // Celo testnet
     transport: http(),
 });
@@ -32,7 +32,7 @@ const client = createWalletClient({
  */
 async function demoLegacyTransactionType() {
     console.log(`Initiating legacy transaction...`);
-    const transactionHash = await client.sendTransaction({
+    const transactionHash = await walletClient.sendTransaction({
         account, // Sender
         to: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8", // Recipient (illustrative address)
         value: parseEther("0.01"), // 0.01 CELO
@@ -53,7 +53,7 @@ async function demoLegacyTransactionType() {
  */
 async function demoDynamicFeeTransactionType() {
     console.log(`Initiating dynamic fee (EIP-1559) transaction...`);
-    const transactionHash = await client.sendTransaction({
+    const transactionHash = await walletClient.sendTransaction({
         account, // Sender
         to: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8", // Recipient (illustrative address)
         value: parseEther("0.01"), // 0.01 CELO
@@ -75,7 +75,7 @@ async function demoDynamicFeeTransactionType() {
  */
 async function demoFeeCurrencyTransactionType() {
     console.log(`Initiating custom fee currency transaction...`);
-    const transactionHash = await client.sendTransaction({
+    const transactionHash = await walletClient.sendTransaction({
         account, // Sender
         to: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8", // Recipient (illustrative address)
         value: parseEther("0.01"), // 0.01 CELO
