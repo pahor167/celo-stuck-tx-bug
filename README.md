@@ -46,7 +46,7 @@ Legend:
 
 | Client library | Language | <img width="20" src="assets/images/Ethereum.png"> | since | <img width="20" src="assets/images/Celo.jpg"> | since | Comment |
 |---|:---:|:---:|:---:|:---|---|---|
-| `viem` | TS/JS | ✅ | | ✅ | >[1.18.0](https://github.com/wagmi-dev/viem/releases/tag/viem%401.18.0) | --- | 
+| `viem` | TS/JS | ✅ | | ✅ | >[1.19.5][1] | --- | 
 | `ethers` | TS/JS | ✅ | |  ❌ | | Support via fork in <br> `celo-ethers-wrapper` | 
 | `celo-ethers-wrapper` | TS/JS | ✅ | | ✅ | >[2.0.0](https://github.com/celo-tools/celo-ethers-wrapper/releases/tag/2.0.0) | --- |
 | `web3js` | TS/JS | ✅ | |  ❌ | | Support via fork in  <br> `contractkit` |
@@ -54,6 +54,8 @@ Legend:
 | `Web3j` | Java | ✅ | |  ❌ |  | --- |
 | `rust-ethers` | Rust |  ✅ | | ❌ | | --- |
 | `brownie` | Python |  ✅ | | ❌ | | --- |
+
+[1]: https://github.com/wevm/viem/blob/main/src/CHANGELOG.md#1195
 
 ## Background
 
