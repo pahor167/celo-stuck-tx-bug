@@ -293,39 +293,35 @@ npm demo
 ### Expected output
 
 ```sh
-~/Documents/txtypes main $ yarn run demo
-yarn run v1.22.19
-$ ts-node demo.ts
+$ yarn demo
+
 Initiating legacy transaction...
 Transaction details: {
   type: 'legacy',
   status: 'success',
-  transactionHash: '0x6ea4ee86797b7850b97fd418c17a8282dcf9370ac1eb2f6e1897d3697b0026ba',
+  transactionHash: '0xbf2c54cecdd4bee52967cab05286caeb2d7202d2d4cea3578e18aee9dad5af11',
   from: '0x303c22e6ef01cba9d03259248863836cb91336d5',
-  to: '0x70997970c51812dc3a010c7d01b50e0d17dc79c8',
-  feeCurrency: undefined
+  to: '0x70997970c51812dc3a010c7d01b50e0d17dc79c8'
 } 
 
 Initiating dynamic fee (EIP-1559) transaction...
 Transaction details: {
   type: 'eip1559',
   status: 'success',
-  transactionHash: '0xa0f66c0c52be0480735b42818c7e08b59c487f5c9729ae969f900055703ad8f2',
+  transactionHash: '0x63dc4d839df23a38392d74bc8876b2a1ddfe874d800d44647a476ecd2c3f4945',
   from: '0x303c22e6ef01cba9d03259248863836cb91336d5',
-  to: '0x70997970c51812dc3a010c7d01b50e0d17dc79c8',
-  feeCurrency: undefined
+  to: '0x70997970c51812dc3a010c7d01b50e0d17dc79c8'
 } 
 
 Initiating custom fee currency transaction...
 Transaction details: {
-  type: '0x7c',
+  type: '0x7b',
   status: 'success',
-  transactionHash: '0x9935c26499205b028a2518cfa5a32b7ebf68533deec414c8ded9f91ae5aa5dd8',
+  transactionHash: '0x7d22baea5d23a8b10fa6a2b5ad49b66113f9258bd5c5ac3914f67a521fc5fc2b',
   from: '0x303c22e6ef01cba9d03259248863836cb91336d5',
-  to: '0x70997970c51812dc3a010c7d01b50e0d17dc79c8',
-  feeCurrency: undefined
+  to: '0x70997970c51812dc3a010c7d01b50e0d17dc79c8'
 } 
 
-✨  Done in 30.86s.
+✨  Done in 23.28s.
 ```
 
