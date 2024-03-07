@@ -107,7 +107,7 @@ const walletClient = createWalletClient({
   });
 
   console.log(
-    "\n=> Trying to replace the transaction with a new valid CIP64 one...\nIt will fail with 'replacement transaction underpriced', until the bug 2nd is fixed"
+    "\n=> Trying to replace the transaction with a new valid CIP64 one...\nIt will fail with 'replacement transaction underpriced', until the 2nd bug is fixed"
   );
   const txHash = await walletClient
     .sendTransaction({
