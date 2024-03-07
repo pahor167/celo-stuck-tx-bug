@@ -10,6 +10,8 @@ The script sends a transaction to the Celo network with an incorrect fee adapter
 
 2. The second bug is that the replacement transaction fails unless it is a legacy transaction type. If the `gasPrice` field is used to force the transaction to be a legacy type, the replacement transaction is successful.
 
+This was tested against https://alfajores-forno.celo-testnet.org running Celo node v1.8.1.
+
 ## Usage
 
 To run the script, follow these steps:
@@ -18,6 +20,3 @@ To run the script, follow these steps:
 2. Run the script with `yarn demo`.
 
 ## Example output
-
-
-
