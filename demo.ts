@@ -1,139 +1,153 @@
 import {
-    createPublicClient,
-    createWalletClient,
-    hexToBigInt,
-    http,
-    parseEther,
-    parseGwei,
+  createPublicClient,
+  createWalletClient,
+  formatEther,
+  formatUnits,
+  http,
+  parseGwei,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { mnemonicToAccount, privateKeyToAccount } from "viem/accounts";
 import { celoAlfajores } from "viem/chains";
-import "dotenv/config"; // use to read private key from environment variable
+import "dotenv/config";
+import { erc20Abi } from "./erc20";
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY
+const CELO_DERIVATION_PATH = "m/44'/52752'/0'/0/0";
 
-/**
- * Boilerplate to create a viem client
- */
-const account = privateKeyToAccount(`0x${PRIVATE_KEY}`);
+const STBLTEST_ADDRESS = "0x780c1551c2be3ea3b1f8b1e4cedc9c3ce40da24e";
+const STBLTEST_DECIMALS = 6;
+const STBLTEST_FEE_ADAPTER_ADDRESS =
+  "0xdb93874fe111f5a87acc11ff09ee9450ac6509ae";
+const STBLTEST_FEE_ADAPTER_DECIMALS = 18;
+
+// Number of attempts to check if the transaction is confirmed
+const MAX_ATTEMPTS = 3;
+const WAIT_TIME_MS = 5_000;
+
+const MNEMONIC = process.env.MNEMONIC;
+
+if (!MNEMONIC) {
+  throw new Error("Please set MNEMONIC in .env file");
+}
+
+const account = mnemonicToAccount(MNEMONIC, {
+  path: CELO_DERIVATION_PATH as any,
+});
 const publicClient = createPublicClient({
-    chain: celoAlfajores,
-    transport: http(),
+  chain: celoAlfajores,
+  transport: http(),
 });
 const walletClient = createWalletClient({
-    chain: celoAlfajores, // Celo testnet
-    transport: http(),
+  chain: celoAlfajores, // Celo testnet
+  transport: http(),
 });
 
-/**
- * Transation type: 0 (0x00)
- * Name: "Legacy"
- * Description: Ethereum legacy transaction
- */
-async function demoLegacyTransactionType() {
-    console.log(`Initiating legacy transaction...`);
-    const transactionHash = await walletClient.sendTransaction({
-        account, // Sender
-        to: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8", // Recipient (illustrative address)
-        value: parseEther("0.01"), // 0.01 CELO
-        gasPrice: parseGwei("20"), // Special field for legacy transaction type
+(async () => {
+  console.log(`Determining balances for account: ${account.address}`);
+  const celoBalance = await publicClient.getBalance({
+    address: account.address,
+  });
+  const balanceAsEther = formatEther(celoBalance);
+  console.log(`${balanceAsEther} CELO`);
+
+  // Get STBLTEST token balance
+  const value = await publicClient.readContract({
+    address: STBLTEST_ADDRESS,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [account.address],
+  });
+  const stblBalance = formatUnits(value, STBLTEST_DECIMALS);
+  console.log(`${stblBalance} STBLTEST`);
+
+  if (value <= 0) {
+    throw new Error("Please add STBLTEST to your account");
+  }
+
+  console.log(`\n=> Sending CIP64 transaction with incorrect fee adapter...`);
+
+  const txHashWithIncorrectAdapter = await walletClient.sendTransaction({
+    account,
+    to: account.address, // sending to self
+    value: 1n,
+    feeCurrency: "0xc9cce1e51f1393ce39eb722e3e59ede6fabf89fd", // old incorrect fee adapter
+    maxFeePerGas: parseGwei("10"),
+  });
+
+  console.log(
+    `Successfully sent ${txHashWithIncorrectAdapter}\nIt will be stuck in pending state, until the bug is fixed`
+  );
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    console.log(
+      `Checking status for ${txHashWithIncorrectAdapter} (attempt ${
+        i + 1
+      }/${MAX_ATTEMPTS})...`
+    );
+    const txIncorrectAdapter = await publicClient.getTransaction({
+      hash: txHashWithIncorrectAdapter,
+    });
+    if (txIncorrectAdapter.blockNumber) {
+      console.log("Transaction is confirmed! Stuck TX bug is fixed! 🎉🎉🎉");
+      console.log("Transaction details:", txIncorrectAdapter);
+      process.exit(0);
+      break;
+    } else {
+      console.log("Transaction is still pending...");
+    }
+    if (i < MAX_ATTEMPTS - 1) {
+      await new Promise((resolve) => setTimeout(resolve, WAIT_TIME_MS));
+    }
+  }
+
+  // Get nonce to replace the stuck transaction
+  const nonce = await publicClient.getTransactionCount({
+    address: account.address,
+  });
+
+  console.log(
+    "\n=> Trying to replace the transaction with a new valid CIP64 one...\nIt will fail with 'replacement transaction underpriced', until the bug 2nd is fixed"
+  );
+  const txHash = await walletClient
+    .sendTransaction({
+      account,
+      to: account.address, // sending to self
+      value: 1n,
+      maxFeePerGas: parseGwei("200"), // no matter what maxFeePerGas is used, it will return "replacement transaction underpriced"
+      nonce,
+    })
+    .catch((e) => {
+      console.error("Error sending transaction:", e);
+      return undefined;
     });
 
-    const transactionReceipt = await publicClient.waitForTransactionReceipt({
-        hash: await transactionHash,
+  if (txHash) {
+    console.log(`Waiting for transaction receipt for ${txHash}`);
+    const txReceipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
     });
-    
-    printFormattedTransactionReceipt(transactionReceipt);
-}
+    console.log("Receipt:", txReceipt);
+    console.log(
+      "Transaction is confirmed! CIP64 underpriced replacement bug is fixed! 🎉🎉🎉"
+    );
+    console.log("Transaction receipt:", txReceipt);
+    process.exit(0);
+  }
 
-/**
- * Transaction type: 2 (0x02)
- * Name: "Dynamic fee"
- * Description: Ethereum EIP-1559 transaction
- */
-async function demoDynamicFeeTransactionType() {
-    console.log(`Initiating dynamic fee (EIP-1559) transaction...`);
-    const transactionHash = await walletClient.sendTransaction({
-        account, // Sender
-        to: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8", // Recipient (illustrative address)
-        value: parseEther("0.01"), // 0.01 CELO
-        maxFeePerGas: parseGwei("10"), // Special field for dynamic fee transaction type (EIP-1559)
-        maxPriorityFeePerGas: parseGwei("10"), // Special field for dynamic fee transaction type (EIP-1559)
-    });
+  console.log(
+    "\n=> Trying to replace the transaction using a legacy TX type...\nIt will work, because the legacy type is not affected by the bug"
+  );
 
-    const transactionReceipt = await publicClient.waitForTransactionReceipt({
-        hash: await transactionHash,
-    });
-    
-    printFormattedTransactionReceipt(transactionReceipt);
-}
+  // This one will work
+  const txHashUnstuck = await walletClient.sendTransaction({
+    account,
+    to: account.address, // sending to self
+    value: 1n,
+    gasPrice: parseGwei("20"), // This forces the transaction to be a legacy type
+    nonce,
+  });
 
-/**
- * Transaction type: 123 (0x7b)
- * Name: "Dynamic fee"
- * Description: Celo dynamic fee transaction (with custom fee currency)
- */
-async function demoFeeCurrencyTransactionType() {
-    console.log(`Initiating custom fee currency transaction...`);
-    const transactionHash = await walletClient.sendTransaction({
-        account, // Sender
-        to: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8", // Recipient (illustrative address)
-        value: parseEther("0.01"), // 0.01 CELO
-        feeCurrency: "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1", // cUSD fee currency
-        maxFeePerGas: parseGwei("10"), // Special field for dynamic fee transaction type (EIP-1559)
-        maxPriorityFeePerGas: parseGwei("10"), // Special field for dynamic fee transaction type (EIP-1559)
-    });
-
-    const transactionReceipt = await publicClient.waitForTransactionReceipt({
-        hash: await transactionHash,
-    });
-
-    printFormattedTransactionReceipt(transactionReceipt);
-}
-
-function printFormattedTransactionReceipt(transactionReceipt: any) {
-
-    const {
-        blockHash,
-        blockNumber,
-        contractAddress,
-        cumulativeGasUsed,
-        effectiveGasPrice,
-        from,
-        gasUsed,
-        logs,
-        logsBloom,
-        status,
-        to,
-        transactionHash,
-        transactionIndex,
-        type,
-        feeCurrency,
-        gatewayFee,
-        gatewayFeeRecipient
-      } = transactionReceipt;
-      
-      const filteredTransactionReceipt = {
-        type,
-        status,
-        transactionHash,
-        from,
-        to
-      };
-
-    console.log(`Transaction details:`, filteredTransactionReceipt, `\n`);
-}
-
-// Wrap both demos in an async function to await their completion
-async function runDemosSequentially() {
-    // Run each demo and await its completion
-    await demoLegacyTransactionType();
-    await demoDynamicFeeTransactionType();
-    await demoFeeCurrencyTransactionType();
-}
-
-// Run the demos sequentially
-runDemosSequentially().catch((err) => {
-    // Handle any errors that might occur in the demos
-    console.error("An error occurred:", err);
-});
+  console.log(`Waiting for transaction receipt for ${txHashUnstuck}`);
+  const txReceiptUnstuck = await publicClient.waitForTransactionReceipt({
+    hash: txHashUnstuck,
+  });
+  console.log("Receipt:", txReceiptUnstuck);
+})();
