@@ -17,7 +17,8 @@ This was tested against https://alfajores-forno.celo-testnet.org running Celo no
 To run the script, follow these steps:
 
 1. Install the necessary dependencies with `yarn install`.
-2. Run the script with `yarn demo`.
+2. `cp .env.example .env` and fill in the seed phrase of an account that has CELO and STBLTEST on Alfajores.
+3. Run the script with `yarn demo`.
 
 ## Example output
 
