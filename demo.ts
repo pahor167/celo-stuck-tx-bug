@@ -46,20 +46,23 @@ const walletClient = createWalletClient({
   const celoBalance = await publicClient.getBalance({
     address: account.address,
   });
-  const balanceAsEther = formatEther(celoBalance);
-  console.log(`${balanceAsEther} CELO`);
+  const celoBalanceInDecimal = formatEther(celoBalance);
+  console.log(`${celoBalanceInDecimal} CELO`);
 
   // Get STBLTEST token balance
-  const value = await publicClient.readContract({
+  const stblBalance = await publicClient.readContract({
     address: STBLTEST_ADDRESS,
     abi: erc20Abi,
     functionName: "balanceOf",
     args: [account.address],
   });
-  const stblBalance = formatUnits(value, STBLTEST_DECIMALS);
-  console.log(`${stblBalance} STBLTEST`);
+  const stblBalanceInDecimal = formatUnits(stblBalance, STBLTEST_DECIMALS);
+  console.log(`${stblBalanceInDecimal} STBLTEST`);
 
-  if (value <= 0) {
+  if (celoBalance <= 0) {
+    throw new Error("Please add CELO to your account");
+  }
+  if (stblBalance <= 0) {
     throw new Error("Please add STBLTEST to your account");
   }
 
