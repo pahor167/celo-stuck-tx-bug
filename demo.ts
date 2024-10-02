@@ -13,11 +13,11 @@ import { erc20Abi } from "./erc20";
 
 const CELO_DERIVATION_PATH = "m/44'/52752'/0'/0/0";
 
-const STBLTEST_ADDRESS = "0x780c1551c2be3ea3b1f8b1e4cedc9c3ce40da24e";
-const STBLTEST_DECIMALS = 6;
-const STBLTEST_FEE_ADAPTER_ADDRESS =
+const USDC_ADDRESS = "0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B";
+const USDC_DECIMALS = 6;
+const USDC_FEE_ADAPTER_ADDRESS =
   "0xdb93874fe111f5a87acc11ff09ee9450ac6509ae";
-const STBLTEST_FEE_ADAPTER_DECIMALS = 18;
+const USDC_FEE_ADAPTER_DECIMALS = 18;
 
 // Number of attempts to check if the transaction is confirmed
 const MAX_ATTEMPTS = 3;
@@ -25,13 +25,17 @@ const WAIT_TIME_MS = 5_000;
 
 const MNEMONIC = process.env.MNEMONIC;
 
-if (!MNEMONIC) {
-  throw new Error("Please set MNEMONIC in .env file");
-}
+// if (!MNEMONIC) {
+//   throw new Error("Please set MNEMONIC in .env file");
+// }
 
-const account = mnemonicToAccount(MNEMONIC, {
-  path: CELO_DERIVATION_PATH as any,
-});
+// account from private key
+const account = privateKeyToAccount(
+  "0x" // add private key in format 0x...
+);
+// const account = mnemonicToAccount(MNEMONIC, {
+//   path: CELO_DERIVATION_PATH as any,
+// });
 const publicClient = createPublicClient({
   chain: celoAlfajores,
   transport: http(),
@@ -49,44 +53,46 @@ const walletClient = createWalletClient({
   const celoBalanceInDecimal = formatEther(celoBalance);
   console.log(`${celoBalanceInDecimal} CELO`);
 
-  // Get STBLTEST token balance
+  // Get USDC token balance
   const stblBalance = await publicClient.readContract({
-    address: STBLTEST_ADDRESS,
+    address: USDC_ADDRESS,
     abi: erc20Abi,
     functionName: "balanceOf",
     args: [account.address],
   });
-  const stblBalanceInDecimal = formatUnits(stblBalance, STBLTEST_DECIMALS);
-  console.log(`${stblBalanceInDecimal} STBLTEST`);
+  const stblBalanceInDecimal = formatUnits(stblBalance, USDC_DECIMALS);
+  console.log(`${stblBalanceInDecimal} USDC`);
 
   if (celoBalance <= 0) {
     throw new Error("Please add CELO to your account");
   }
   if (stblBalance <= 0) {
-    throw new Error("Please add STBLTEST to your account");
+    throw new Error("Please add USDC to your account");
   }
 
-  console.log(`\n=> Sending CIP64 transaction with incorrect fee adapter...`);
+  console.log(`\n=> Sending CIP64 transaction with fee adapter...`);
 
-  const txHashWithIncorrectAdapter = await walletClient.sendTransaction({
+  const txHasWithAdapter = await walletClient.sendTransaction({
     account,
     to: account.address, // sending to self
     value: 1n,
-    feeCurrency: "0xc9cce1e51f1393ce39eb722e3e59ede6fabf89fd", // old incorrect fee adapter
-    maxFeePerGas: parseGwei("10"),
+    feeCurrency: "0x4822e58de6f5e485eF90df51C41CE01721331dC0",
+    maxFeePerGas: parseGwei("30"),
   });
 
   console.log(
-    `Successfully sent ${txHashWithIncorrectAdapter}\nIt will be stuck in pending state, until the bug is fixed`
+    `Successfully sent ${txHasWithAdapter}\nIt will be stuck in pending state, until the bug is fixed`
   );
+
+  await new Promise((resolve) => setTimeout(resolve, 5000));
   for (let i = 0; i < MAX_ATTEMPTS; i++) {
     console.log(
-      `Checking status for ${txHashWithIncorrectAdapter} (attempt ${
+      `Checking status for ${txHasWithAdapter} (attempt ${
         i + 1
       }/${MAX_ATTEMPTS})...`
     );
     const txIncorrectAdapter = await publicClient.getTransaction({
-      hash: txHashWithIncorrectAdapter,
+      hash: txHasWithAdapter,
     });
     if (txIncorrectAdapter.blockNumber) {
       console.log("Transaction is confirmed! Stuck TX bug is fixed! 🎉🎉🎉");
